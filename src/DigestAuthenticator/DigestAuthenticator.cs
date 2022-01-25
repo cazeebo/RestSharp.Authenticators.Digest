@@ -11,16 +11,18 @@ namespace RestSharp.Authenticators.Digest
         private readonly string _password;
 
         private readonly string _username;
+        private readonly DigestAuthAlgorithm _algorithm;
 
         /// <summary>
         ///     Creates a new instance of <see cref="DigestAuthenticator" /> class.
         /// </summary>
         /// <param name="username">The username.</param>
         /// <param name="password">The password.</param>
-        public DigestAuthenticator(string username, string password)
+        public DigestAuthenticator(string username, string password, DigestAuthAlgorithm algorithm = DigestAuthAlgorithm.MD5)
         {
             _username = username;
             _password = password;
+            _algorithm = algorithm;
             Timeout = DEFAULT_TIMEOUT;
         }
 
@@ -40,7 +42,7 @@ namespace RestSharp.Authenticators.Digest
             var uri = client.BuildUri(request);
             var manager = new DigestAuthenticatorManager(client.BaseUrl, _username, _password, Timeout);
             manager.GetDigestAuthHeader(uri.PathAndQuery, request.Method);
-            var digestHeader = manager.GetDigestHeader(uri.PathAndQuery, request.Method);
+            var digestHeader = manager.GetDigestHeader(uri.PathAndQuery, request.Method, _algorithm);
             request.AddParameter("Authorization", digestHeader, ParameterType.HttpHeader);
         }
     }

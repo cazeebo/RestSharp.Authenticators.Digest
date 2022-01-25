@@ -21,6 +21,8 @@ namespace RestSharp.Authenticators.Digest
 
         private readonly string _username;
 
+        private string _algorithm = "";
+
         /// <summary>
         ///     The cnounce that is generated randomly by the application.
         /// </summary>
@@ -86,9 +88,19 @@ namespace RestSharp.Authenticators.Digest
         /// <param name="digestUri">The digest uri.</param>
         /// <param name="method">The method.</param>
         /// <returns>The digest header.</returns>
-        public string GetDigestHeader(string digestUri, Method method)
+        public string GetDigestHeader(string digestUri, Method method, DigestAuthAlgorithm algorithm)
         {
-            var hash1 = GenerateMD5($"{_username}:{_realm}:{_password}");
+            var hash1 = "";
+            if (algorithm == DigestAuthAlgorithm.MD5)
+            {
+                _algorithm = "MD5";
+                hash1 = GenerateMD5($"{_username}:{_realm}:{_password}");
+            }
+            else if (algorithm == DigestAuthAlgorithm.MD5Sess)
+            {
+                _algorithm = "MD5-sess";
+                hash1 = GenerateMD5($"{GenerateMD5($"{_username}:{_realm}:{_password}")}:{_nonce}:{_cnonce}");
+            }
             var hash2 = GenerateMD5($"{method}:{digestUri}");
             var digestResponse =
                 GenerateMD5($"{hash1}:{_nonce}:{DigestHeader.NONCE_COUNT:00000000}:{_cnonce}:{_qop}:{hash2}");
@@ -96,7 +108,7 @@ namespace RestSharp.Authenticators.Digest
                    $"realm=\"{_realm}\"," +
                    $"nonce=\"{_nonce}\"," +
                    $"uri=\"{digestUri}\"," +
-                   "algorithm=MD5," +
+                   $"algorithm={_algorithm}," +
                    $"response=\"{digestResponse}\"," +
                    $"qop={_qop}," +
                    $"nc={DigestHeader.NONCE_COUNT:00000000}," +
