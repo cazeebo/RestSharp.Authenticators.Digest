@@ -14,7 +14,7 @@ namespace Example
         public static void Main(string[] args)
         {
             var client = new RestClient("http://api.myhost.com/api/v1");
-            client.Authenticator = new DigestAuthenticator("user", "password");
+            client.Authenticator = new DigestAuthenticator("user", "password", DigestAuthAlgorithm.MD5);
             var request = new RestRequest("values", Method.GET);
             request.AddHeader("Content-Type", "application/json");
 
