@@ -91,19 +91,50 @@ namespace RestSharp.Authenticators.Digest
         public string GetDigestHeader(string digestUri, Method method, DigestAuthAlgorithm algorithm)
         {
             var hash1 = "";
+            var hash2 = "";
+            var digestResponse = "";
             if (algorithm == DigestAuthAlgorithm.MD5)
             {
                 _algorithm = "MD5";
                 hash1 = GenerateMD5($"{_username}:{_realm}:{_password}");
+                hash2 = GenerateMD5($"{method}:{digestUri}");
+                digestResponse = GenerateMD5($"{hash1}:{_nonce}:{DigestHeader.NONCE_COUNT:00000000}:{_cnonce}:{_qop}:{hash2}");
             }
-            else if (algorithm == DigestAuthAlgorithm.MD5Sess)
+            else if (algorithm == DigestAuthAlgorithm.MD5_Sess)
             {
                 _algorithm = "MD5-sess";
                 hash1 = GenerateMD5($"{GenerateMD5($"{_username}:{_realm}:{_password}")}:{_nonce}:{_cnonce}");
+                hash2 = GenerateMD5($"{method}:{digestUri}");
+                digestResponse = GenerateMD5($"{hash1}:{_nonce}:{DigestHeader.NONCE_COUNT:00000000}:{_cnonce}:{_qop}:{hash2}");
             }
-            var hash2 = GenerateMD5($"{method}:{digestUri}");
-            var digestResponse =
-                GenerateMD5($"{hash1}:{_nonce}:{DigestHeader.NONCE_COUNT:00000000}:{_cnonce}:{_qop}:{hash2}");
+            else if (algorithm == DigestAuthAlgorithm.SHA_256)
+            {
+                _algorithm = "SHA-256";
+                hash1 = GenerateSha256($"{_username}:{_realm}:{_password}");
+                hash2 = GenerateSha256($"{method}:{digestUri}");
+                digestResponse = GenerateSha256($"{hash1}:{_nonce}:{DigestHeader.NONCE_COUNT:00000000}:{_cnonce}:{_qop}:{hash2}");
+            }
+            else if (algorithm == DigestAuthAlgorithm.SHA_256_Sess)
+            {
+                _algorithm = "SHA-256-sess";
+                hash1 = GenerateSha256($"{GenerateSha256($"{_username}:{_realm}:{_password}")}:{_nonce}:{_cnonce}");
+                hash2 = GenerateSha256($"{method}:{digestUri}");
+                digestResponse = GenerateSha256($"{hash1}:{_nonce}:{DigestHeader.NONCE_COUNT:00000000}:{_cnonce}:{_qop}:{hash2}");
+            }
+            else if (algorithm == DigestAuthAlgorithm.SHA_512_256)
+            {
+                _algorithm = "SHA-512-256";
+                hash1 = GenerateSha512($"{_username}:{_realm}:{_password}");
+                hash2 = GenerateSha512($"{method}:{digestUri}");
+                digestResponse = GenerateSha512($"{hash1}:{_nonce}:{DigestHeader.NONCE_COUNT:00000000}:{_cnonce}:{_qop}:{hash2}");
+            }
+            else if (algorithm == DigestAuthAlgorithm.SHA_512_256_Sess)
+            {
+                _algorithm = "SHA-512-256-sess";
+                hash1 = GenerateSha512($"{GenerateSha512($"{_username}:{_realm}:{_password}")}:{_nonce}:{_cnonce}");
+                hash2 = GenerateSha512($"{method}:{digestUri}");
+                digestResponse = GenerateSha512($"{hash1}:{_nonce}:{DigestHeader.NONCE_COUNT:00000000}:{_cnonce}:{_qop}:{hash2}");
+            }
             return $"Digest username=\"{_username}\"," +
                    $"realm=\"{_realm}\"," +
                    $"nonce=\"{_nonce}\"," +
@@ -129,6 +160,43 @@ namespace RestSharp.Authenticators.Digest
             return stringBuilder.ToString();
         }
 
+        private static string GenerateSha256(string input)
+        {
+            // Create a SHA256   
+            using (SHA256 sha256Hash = SHA256.Create())
+            {
+                // ComputeHash - returns byte array  
+                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(input));
+
+                // Convert byte array to a string   
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    builder.Append(bytes[i].ToString("x2"));
+                }
+                return builder.ToString();
+            }
+        }
+
+        private static string GenerateSha512(string input)
+        {
+            using (SHA512 sha512 = new SHA512Managed())
+            {
+                var hashSh512 = sha512.ComputeHash(Encoding.UTF8.GetBytes(input));
+
+                // declare stringbuilder
+                var sb = new StringBuilder(hashSh512.Length * 2);
+
+                // computing hashSh1
+                foreach (byte b in hashSh512)
+                {
+                    // "x2"
+                    sb.Append(b.ToString("X2").ToLower());
+                }
+
+                return sb.ToString();
+            }
+        }
         private void GetDigestDataFromException(WebException ex)
         {
             if (ex.Response == null || ((HttpWebResponse) ex.Response).StatusCode != HttpStatusCode.Unauthorized)

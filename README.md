@@ -1,6 +1,16 @@
 # RestSharp.DigestAuthenticator
 Extends RestSharp features for digest authentication
 
+Now with added support for different algorithms used to produce the digest.
+Supports the following algorithms.
+MD5
+MD5-sess
+SHA-256
+SHA-256-sess
+SHA-512-256
+SHA-512-256-sess
+
+
 ## Examples
 ```CSharp
 namespace Example
